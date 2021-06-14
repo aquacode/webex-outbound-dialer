@@ -95,10 +95,14 @@ app.post('/bridge', async (req, res, next) => {
     }
     console.log(processArgs);
     success = true;
-    var child = fork('./webkit.js', processArgs, {
+
+    var child = fork('./firefox.js', processArgs, {
       stdio: 'pipe'
     });
-    
+    /*var child = fork('./webkit.js', processArgs, {
+      stdio: 'pipe'
+    });*/
+
     setupChildListeners(child, res);
     if([undefined, null, false].indexOf(req.body.wait) >= 0){
       send(res, {"success":success, "message":"Request to bridge call has been received."})

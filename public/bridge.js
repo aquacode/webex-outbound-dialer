@@ -153,10 +153,36 @@ function operator(config){
 }
 
 function testOperator(){
-  firstLegDestination = "tahanon.acecloud@webex.com";
+  firstLegDestination = "tahanson.acecloud@webex.com";
   secondLegDestination = "taylors_home_dx80@wxsd.rooms.webex.com";
   launchedFrom = "webkit";
-  mainLeg(firstLegDestination, "first");
+  firstLegWithMedia(firstLegDestination, "first");
+}
+
+function firstLegWithMedia(firstDestination){
+  console.log(`firstLeg destination - ${firstDestination}`);
+  return first_webex.meetings
+    .create(firstDestination)
+    .then(meeting => {
+      meetings.first = meeting;
+      bindFirstMeetingEvents(meetings.first);
+      return meeting.join().then(() => {
+        console.log('adding first media (none to start)');
+        return meeting.getMediaStreams(mediaSettings).then((mediaStreams) => {
+          const [localStream, localShare] = mediaStreams;
+          console.log("localStream:");
+          console.log(localStream);
+          meeting.addMedia({
+            localShare,
+            localStream,
+            mediaSettings
+          });
+        });
+      });
+    })
+    .catch(error => {
+      console.error(error);
+    });
 }
 
 
@@ -414,8 +440,12 @@ function addTrack(main_stream, media){
     if(main_stream == "first" && secondLegDestination != null){
       console.log('auto starting second leg to: '+ secondLegDestination);
       secondLeg(secondLegDestination);
-    } else if (main_stream == "second" && launchedFrom == "webkit"){
-      mainLeg(firstLegDestination, "third");
+    } else if (main_stream == "second"){
+        if(launchedFrom == "webkit"){
+          mainLeg(firstLegDestination, "third");
+        } else {
+          updateFirstLeg();
+        }
     } else if (main_stream == "third"){
       updateSecondLegAV();
       meetings.first.leave().catch(err => {
