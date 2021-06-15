@@ -114,20 +114,7 @@ async function retry(fn, counter, ...args) {
     console.log("Moving on.");
 
     let tokenPositions = {"first":"initialToken", "second":"endpointToken", "third":"meetingToken"};
-    for(let key of Object.keys(resultObject)){
-      console.log(resultObject[key]);
-      if(resultObject[key].success !== true){
-        loadSuccess = false;
-        console.log('failure!')
-        console.log(resultObject[key])
-        let tokenPosition = tokenPositions[key];
-        if(resultObject[key].code == 401){
-          msg += `The ${tokenPosition} is unauthorized. (401)`;
-        } else {
-          msg += `The ${tokenPosition} is not valid. `;
-        }
-      }
-    }
+    
     if(loadSuccess){
       var config = {
                     "meetingSIP":meeting,
