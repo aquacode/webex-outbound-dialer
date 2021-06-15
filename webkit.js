@@ -56,8 +56,8 @@ async function retry(fn, counter, ...args) {
     //await page.waitForFunction(() => loadedReady == true);
     //let resultObject = JSON.parse(await page.innerHTML("#loadedStatus"));
     //console.log(resultObject);
-    sleep(12000);
-    resultObject={"first":true, "second":true}
+    await sleep(12000);
+    resultObject={"first":{"success":true}, "second":{"success":true}}
     console.log("Done Loading.");
     let loadSuccess = true;
     let tokenPositions = {"first":"initialToken", "second":"endpointToken", "third":"meetingToken"};
