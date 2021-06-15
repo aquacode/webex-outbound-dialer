@@ -11,6 +11,7 @@ console.log(meetingToken);
 let init_complete = {};
 let num_webex_instances = 2;
 let num_deregistered = 0;
+var ready=false;
 
 const first_webex = (window.webex = Webex.init({credentials: {access_token: initialToken}}));
 const second_webex = (window.webex = Webex.init({credentials: {access_token: endpointToken}}));
@@ -55,6 +56,10 @@ if(third_webex != null){
   third_webex.once("ready", () => {
     genericFinalizeWebexAuth("third", third_webex);
   });
+}
+
+function isReady(){
+  return ready == true;
 }
 
 function genericFinalizeWebexAuth(place, generic_webex){
@@ -113,10 +118,12 @@ function writeElement(id, innerHTML){
   retEle.id = id;
   retEle.innerHTML = JSON.stringify(innerHTML);
   document.body.appendChild(retEle);
+  console.log('element written');
+  console.log(retEle.innerHTML);
 }
 
 function loadElement(){
-  let ready = false;
+  ready = false;
   let keyLength = Object.keys(init_complete).length;
   console.log("init_complete: " + keyLength)
   if(keyLength == 2 && meetingToken == null){
@@ -129,6 +136,7 @@ function loadElement(){
   if(ready){
     console.log('ready');
     console.log(init_complete);
+    console.log(isReady());
     writeElement("loadedStatus", init_complete);
   }
 }
