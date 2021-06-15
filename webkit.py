@@ -3,15 +3,17 @@ import json
 import os
 from playwright.async_api import async_playwright
 
-from pyvirtualdisplay import Display
-display = Display(visible=0, size=(800, 600))
-display.start()
+#from pyvirtualdisplay import Display
+#display = Display(visible=0, size=(800, 600))
+#display.start()
 
 async def main():
     async with async_playwright() as p:
+        print('here1')
         browser = await p.webkit.launch(headless=False)
-        page = await browser.new_page()
-
+        print('browser made')
+        page = await browser.new_page(viewport={"width":1280, "height":720}, screen={"width":1280, "height":720})
+        print('page made')
         def log_msg(msg):
             print(msg)
 
@@ -21,8 +23,10 @@ async def main():
         meetingToken = None
         msg = ""
 
-        initialToken = "MTM1NzlkMjUtODcyMi00YjkxLWFmYmItYmNmM2RkOWQ0MWNjNGEwNmNmNTEtNTYw_PF84_d790c72e-b584-4211-a90c-0bc4eb6881c4"
-        endpointToken = "ZWM3YmMzNzktOWYwMi00ZjhlLTg5MmUtY2Q0MGZmZjM4MTc4YWU2OTFiOTctNWU0_PF84_1eb65fdf-9643-417f-9974-ad72cae0e10f"
+        initialToken = "NDViMWZkZTgtNWIyYy00MDQwLTlkYjgtN2YwNjJjZDg4YjgwMmMyOGFiNWQtZGI3_PF84_d790c72e-b584-4211-a90c-0bc4eb6881c4"
+        endpointToken = "YTUxNDZjMmUtOTYxYy00MjNlLTlkZmEtOWIyZjE0N2Y4ZWI5YTNjNDBhZDktYjcx_PF84_1eb65fdf-9643-417f-9974-ad72cae0e10f"
+        #initialToken = "MTM1NzlkMjUtODcyMi00YjkxLWFmYmItYmNmM2RkOWQ0MWNjNGEwNmNmNTEtNTYw_PF84_d790c72e-b584-4211-a90c-0bc4eb6881c4"
+        #endpointToken = "ZWM3YmMzNzktOWYwMi00ZjhlLTg5MmUtY2Q0MGZmZjM4MTc4YWU2OTFiOTctNWU0_PF84_1eb65fdf-9643-417f-9974-ad72cae0e10f"
         meeting = "tahanson.acecloud@webex.com"
         endpointSIP = "taylors_home_dx80@wxsd.rooms.webex.com"
 
@@ -36,8 +40,16 @@ async def main():
             gotoURL = 'file://{0}/launch.html?{1}'.format(os.getcwd(), argumentString)
             print(gotoURL);
             await page.goto(gotoURL, wait_until='domcontentloaded')
-
-            loadedStatus = await page.wait_for_selector('#loadedStatus')
+            r = await page.inner_html("#testElem")
+            print(r)
+            s = await page.wait_for_function("() => true == true")
+            print('yes')
+            result = await page.evaluate("() => console.log(ready)")
+            print(result)
+            #s = await page.wait_for_function("() => isReady()")
+            #loadedStatus = await page.wait_for_selector('#loadedStatus', state="hidden")
+            s = await page.wait_for_function("(ready) => ready == true")
+            print(s)
             resultObject = json.loads(await loadedStatus.inner_html())
 
             print(resultObject)

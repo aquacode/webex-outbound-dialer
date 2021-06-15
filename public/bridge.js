@@ -11,6 +11,12 @@ console.log(meetingToken);
 let init_complete = {};
 let num_webex_instances = 2;
 let num_deregistered = 0;
+var loadedReady = false;
+var firstLegReady = false;
+var secondLegReady = false;
+var thirdLegReady = false;
+var cleanupReady = false;
+
 
 const first_webex = (window.webex = Webex.init({credentials: {access_token: initialToken}}));
 const second_webex = (window.webex = Webex.init({credentials: {access_token: endpointToken}}));
@@ -57,6 +63,10 @@ if(third_webex != null){
   });
 }
 
+function isReady(){
+  return ready == true;
+}
+
 function genericFinalizeWebexAuth(place, generic_webex){
   if (generic_webex.canAuthorize) {
     console.log("Test Generic User Authenticated");
@@ -92,6 +102,7 @@ function allClear(){
   if(all_clear){
     console.log('all clear!');
     console.log('writing close element.');
+    cleanupReady = true;
     writeElement("cleanup", {result:"success"});
   }
 }
@@ -113,6 +124,8 @@ function writeElement(id, innerHTML){
   retEle.id = id;
   retEle.innerHTML = JSON.stringify(innerHTML);
   document.body.appendChild(retEle);
+  console.log('element written');
+  console.log(retEle.innerHTML);
 }
 
 function loadElement(){
@@ -129,6 +142,7 @@ function loadElement(){
   if(ready){
     console.log('ready');
     console.log(init_complete);
+    loadedReady = true;
     writeElement("loadedStatus", init_complete);
   }
 }
@@ -140,6 +154,13 @@ function mainLegElement(result, place, message){
   }
   if(place == "first" && result == "failure"){
     endCall(meetings.first);
+  }
+  if(place == "first"){
+    firstLegReady = true;
+  } else if (place == "second"){
+    secondLegReady = true;
+  } else if (place == "third"){
+    thirdLegReady = true;
   }
   writeElement(`${place}LegStatus`, innerHTML);
 }
