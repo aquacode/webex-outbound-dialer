@@ -4,6 +4,16 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function retry(fn, counter, ...args) {
+    await sleep(2000);
+    let result = await fn(...args);
+    if(result){
+      return true;
+    } else {
+      retry(fn, counter+1, ...args);
+    }
+}
+
 (async () => {
   //execPath = "/Applications/Safari.app/Contents/MacOS/Safari"
   //execPath = "/Applications/Safari.app/Contents/MacOS/SafariForWebKitDevelopment"
@@ -42,7 +52,7 @@ function sleep(ms) {
     console.log(gotoURL);
     await page.goto(gotoURL, { waitUntil: 'domcontentloaded' });
     //let loadedStatus = await page.waitForSelector('#loadedStatus');
-    await page.waitForFunction(() => loadedReady == true);
+    //await page.waitForFunction(() => loadedReady == true);
     let resultObject = JSON.parse(await page.innerHTML("#loadedStatus"));
     console.log(resultObject);
     console.log("Done Loading.");
@@ -72,10 +82,11 @@ function sleep(ms) {
       console.log(result);
       resultObject = null;
       try{
-        await page.waitForFunction(() => firstLegReady == true, {timeout:60000});
-        resultObject = JSON.parse(await page.innerHTML("#firstLegStatus"));
+        //await page.waitForFunction(() => firstLegReady == true, {timeout:60000});
+        resultObject = JSON.parse(await page.innerHTML("#firstLegStatus"), {timeout:60000});
         //let firstLegStatus = await page.waitForSelector('#firstLegStatus', {timeout: 60000});
         //resultObject = JSON.parse(await firstLegStatus.innerHTML());
+        console.log('firstLegStatus');
         console.log(resultObject);
       }catch(e){
         msg = "Timeout waiting for initialToken user to be let into meetingSIP. ";
@@ -83,18 +94,20 @@ function sleep(ms) {
       }
       if(resultObject != null){
         if(resultObject["result"] == "success"){
-          await page.waitForFunction(() => secondLegReady == true, {timeout:60000});
+          //await page.waitForFunction(() => secondLegReady == true, {timeout:60000});
           resultObject = JSON.parse(await page.innerHTML("#secondLegStatus"));
           //let secondLegStatus = await page.waitForSelector('#secondLegStatus');
           //resultObject = JSON.parse(await secondLegStatus.innerHTML());
+          console.log('secondLegStatus');
           console.log(resultObject);
           if(resultObject["result"] == "success"){
             resultObject = null;
             try{
-              await page.waitForFunction(() => thirdLegReady == true, {timeout:60000});
-              resultObject = JSON.parse(await page.innerHTML("#thirdLegStatus"));
+              //await page.waitForFunction(() => thirdLegReady == true, {timeout:60000});
+              resultObject = JSON.parse(await page.innerHTML("#thirdLegStatus"), {timeout:60000});
               //let thirdLegStatus = await page.waitForSelector('#thirdLegStatus', {timeout: 60000});
               //resultObject = JSON.parse(await thirdLegStatus.innerHTML());
+              console.log('thirdLegStatus');
               console.log(resultObject);
             }catch(e){
               msg = "Timeout waiting for endpointToken user to be let into meetingSIP. ";
@@ -126,8 +139,8 @@ function sleep(ms) {
     console.log(result);
   }
   console.log('waiting for cleanup.');
-  await page.waitForFunction(() => cleanupReady == true, {timeout:0});
-  resultObject = JSON.parse(await page.innerHTML("#cleanup"));
+  //await page.waitForFunction(() => cleanupReady == true, {timeout:0});
+  resultObject = JSON.parse(await page.innerHTML("#cleanup", {timeout:0}));
   //let cleanupStatus = await page.waitForSelector('#cleanup', {timeout: 0});
   //resultObject = JSON.parse(await cleanupStatus.innerHTML());
   console.log(resultObject);
