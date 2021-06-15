@@ -5,8 +5,10 @@ function sleep(ms) {
 }
 
 (async () => {
-  const browser = await webkit.launch({ headless: false , args: [
-        ]
+  //execPath = "/Applications/Safari.app/Contents/MacOS/Safari"
+  //execPath = "/Applications/Safari.app/Contents/MacOS/SafariForWebKitDevelopment"
+  const browser = await webkit.launch({ headless: true , args: [
+  ], //executablePath:execPath
   });
 
   const page = await browser.newPage();
@@ -19,7 +21,7 @@ function sleep(ms) {
 
   let meetingToken = null;
   let msg = "";
-  
+
   console.log(process.argv);
   //node is argument 0, this file is argument 1, so argv starts at index 2
   let initialToken = process.argv[2];

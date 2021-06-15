@@ -159,6 +159,13 @@ function testOperator(){
   firstLegWithMedia(firstLegDestination, "first");
 }
 
+function testOperator2(){
+  firstLegDestination = "tahanson.acecloud@webex.com";
+  secondLegDestination = "taylors_home_dx80@wxsd.rooms.webex.com";
+  launchedFrom = "webkit";
+  mainLeg(firstLegDestination, "first");
+}
+
 function firstLegWithMedia(firstDestination){
   console.log(`firstLeg destination - ${firstDestination}`);
   return first_webex.meetings
