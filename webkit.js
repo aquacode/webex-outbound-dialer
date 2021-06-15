@@ -50,7 +50,8 @@ async function retry(fn, counter, ...args) {
     //let gotoURL = `http://localhost:${process.env.HIDDEN_PORT}?${argumentString}`;
     let gotoURL = `file://${__dirname}/launch.html?${argumentString}`;
     console.log(gotoURL);
-    await page.goto(gotoURL, { waitUntil: 'domcontentloaded' });
+    await page.goto(gotoURL);
+    console.log('page loaded')
     //let loadedStatus = await page.waitForSelector('#loadedStatus');
     //await page.waitForFunction(() => loadedReady == true);
     let resultObject = JSON.parse(await page.innerHTML("#loadedStatus"));
