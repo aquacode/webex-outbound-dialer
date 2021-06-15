@@ -73,6 +73,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // parse application/json
 app.use(bodyParser.json());
 
+app.get('/launch.html', async(req, res, next) => {
+  console.log('launch')
+  res.sendFile(`${__dirname}/launch.html`)
+});
+
+app.get('/public/bridge.js', async(req, res, next) => {
+  res.sendFile(`${__dirname}/public/bridge.js`)
+});
+
+app.get('/public/webex.js', async(req, res, next) => {
+  res.sendFile(`${__dirname}/public/webex.js`)
+});
+
+app.post('/listener', async(req, res, next) => {
+  console.log('listener');
+  console.log(req.body);
+});
+
 app.post('/bridge', async (req, res, next) => {
   console.log('bridge');
   console.log(req.body);

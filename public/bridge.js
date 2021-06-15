@@ -124,8 +124,17 @@ function writeElement(id, innerHTML){
   retEle.id = id;
   retEle.innerHTML = JSON.stringify(innerHTML);
   document.body.appendChild(retEle);
-  console.log('element written');
-  console.log(retEle.innerHTML);
+  //console.log('element written');
+  //console.log(retEle.innerHTML);
+  fetch('/listener', {
+    method: 'POST',
+    credentials: 'same-origin', // include, *same-origin, omit
+    headers: {
+      'Content-Type': 'application/json',
+      'Element-ID': id
+    },
+    body: JSON.stringify(innerHTML)
+  });
 }
 
 function loadElement(){

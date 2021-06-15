@@ -22,15 +22,10 @@ async function retry(fn, counter, ...args) {
   });
 
   const page = await browser.newPage();
-  page.on("console", (msg) => {
-    console.log(msg)
-  })
-  page.on("pageerror", (err) => {
-    console.log(err)
-  })
 
   let meetingToken = null;
   let msg = "";
+  let loadSuccess = null;
 
   console.log(process.argv);
   //node is argument 0, this file is argument 1, so argv starts at index 2
@@ -41,6 +36,47 @@ async function retry(fn, counter, ...args) {
   if(process.argv.length > 6){
     meetingToken = process.argv[6];
   }
+
+  page.on("console", (msg) => {
+    console.log(msg)
+  })
+
+  page.on("pageerror", (err) => {
+    console.log(err)
+  })
+
+  page.on("request", (req) => {
+    var pathname = new URL(req.url()).pathname;
+    if(pathname == "/listener"){
+      console.log("REQUEST");
+      console.log(req.postDataJSON());
+      let resultObject = req.postDataJSON();
+      console.log(req.headers());
+      if(req.headers()['element-id'] == "loadedStatus"){
+        console.log('here')
+        let tokenPositions = {"first":"initialToken", "second":"endpointToken", "third":"meetingToken"};
+        console.log(Object.keys(resultObject));
+        for(let key of Object.keys(resultObject)){
+          console.log(resultObject[key]);
+          if(resultObject[key].success !== true){
+            loadSuccess = false;
+            console.log('failure!')
+            console.log(resultObject[key])
+            let tokenPosition = tokenPositions[key];
+            if(resultObject[key].code == 401){
+              msg += `The ${tokenPosition} is unauthorized. (401)`;
+            } else {
+              msg += `The ${tokenPosition} is not valid. `;
+            }
+          }
+        }
+        if(loadSuccess == null){
+          loadSuccess = true;
+        }
+      }
+    }
+  })
+
   if(meetingToken != initialToken){
     let argumentString = `initialToken=${initialToken}&endpointToken=${endpointToken}`;
     if(meetingToken != null){
@@ -48,18 +84,35 @@ async function retry(fn, counter, ...args) {
       argumentString += `&meetingToken=${meetingToken}`;
     }
     //let gotoURL = `http://localhost:${process.env.HIDDEN_PORT}?${argumentString}`;
-    let gotoURL = `file://${__dirname}/launch.html?${argumentString}`;
+    //let gotoURL = `file://${__dirname}/launch.html?${argumentString}`;
+    let gotoURL = `http://localhost:10031/launch.html?${argumentString}`;
     console.log(gotoURL);
     await page.goto(gotoURL);
     console.log('page loaded')
+
+    let loadInterval = setInterval(function(){
+      if(loadSuccess != null){
+        clearInterval(loadInterval);
+        if(loadSuccess == true){
+          var config = {
+                        "meetingSIP":meeting,
+                        "endpointSIP":endpointSIP,
+                        "launcher":"webkit",
+                       };
+          result = page.evaluate((config) => operator(config), config)
+        } else {
+          console.log("TODO: FAILURE");
+        }
+      }
+    }, 2000);
     //let loadedStatus = await page.waitForSelector('#loadedStatus');
     //await page.waitForFunction(() => loadedReady == true);
     //let resultObject = JSON.parse(await page.innerHTML("#loadedStatus"));
     //console.log(resultObject);
-    await sleep(12000);
-    resultObject={"first":{"success":true}, "second":{"success":true}}
-    console.log("Done Loading.");
-    let loadSuccess = true;
+    //await sleep(12000);
+    //resultObject={"first":{"success":true}, "second":{"success":true}}
+    console.log("Moving on.");
+
     let tokenPositions = {"first":"initialToken", "second":"endpointToken", "third":"meetingToken"};
     for(let key of Object.keys(resultObject)){
       console.log(resultObject[key]);
