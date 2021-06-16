@@ -4,16 +4,6 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function retry(fn, counter, ...args) {
-    await sleep(2000);
-    let result = await fn(...args);
-    if(result){
-      return true;
-    } else {
-      retry(fn, counter+1, ...args);
-    }
-}
-
 (async () => {
   //execPath = "/Applications/Safari.app/Contents/MacOS/Safari"
   //execPath = "/Applications/Safari.app/Contents/MacOS/SafariForWebKitDevelopment"
@@ -26,6 +16,10 @@ async function retry(fn, counter, ...args) {
   let meetingToken = null;
   let msg = "";
   let loadSuccess = null;
+  let complete = false;
+  let statusCounter = 0;
+  let legCompleted = 0;
+  let cleanup = false;
 
   console.log(process.argv);
   //node is argument 0, this file is argument 1, so argv starts at index 2
@@ -37,6 +31,12 @@ async function retry(fn, counter, ...args) {
     meetingToken = process.argv[6];
   }
 
+  let config = {
+                "meetingSIP":meeting,
+                "endpointSIP":endpointSIP,
+                "launcher":"webkit",
+               };
+
   page.on("console", (msg) => {
     console.log(msg)
   })
@@ -44,6 +44,49 @@ async function retry(fn, counter, ...args) {
   page.on("pageerror", (err) => {
     console.log(err)
   })
+
+  function setLoadStatus(resultObject){
+    console.log('here')
+    let tokenPositions = {"first":"initialToken", "second":"endpointToken", "third":"meetingToken"};
+    console.log(Object.keys(resultObject));
+    for(let key of Object.keys(resultObject)){
+      console.log(resultObject[key]);
+      if(resultObject[key].success !== true){
+        loadSuccess = false;
+        console.log('failure!')
+        console.log(resultObject[key])
+        let tokenPosition = tokenPositions[key];
+        if(resultObject[key].code == 401){
+          msg += `The ${tokenPosition} is unauthorized. (401)`;
+        } else {
+          msg += `The ${tokenPosition} is not valid. `;
+        }
+      }
+    }
+    if(loadSuccess == null){
+      loadSuccess = true;
+    }
+  }
+
+  function waitForEnd(){
+    if(msg != ""){
+      console.log('calling cleanup!');
+      result = page.evaluate(() => cleanup());
+    }
+    console.log("Final MSG:");
+    console.log(msg);
+    process.send(msg); //send this to parent process
+
+    let cleanupInterval = setInterval(function(){
+      if(cleanup){
+        clearInterval(cleanupInterval);
+        console.log('cleanup complete.');
+        console.log('closing browser.');
+        browser.close();
+        process.exit();
+      }
+    }, 2000);
+  }
 
   page.on("request", (req) => {
     var pathname = new URL(req.url()).pathname;
@@ -53,25 +96,27 @@ async function retry(fn, counter, ...args) {
       let resultObject = req.postDataJSON();
       console.log(req.headers());
       if(req.headers()['element-id'] == "loadedStatus"){
-        console.log('here')
-        let tokenPositions = {"first":"initialToken", "second":"endpointToken", "third":"meetingToken"};
-        console.log(Object.keys(resultObject));
-        for(let key of Object.keys(resultObject)){
-          console.log(resultObject[key]);
-          if(resultObject[key].success !== true){
-            loadSuccess = false;
-            console.log('failure!')
-            console.log(resultObject[key])
-            let tokenPosition = tokenPositions[key];
-            if(resultObject[key].code == 401){
-              msg += `The ${tokenPosition} is unauthorized. (401)`;
-            } else {
-              msg += `The ${tokenPosition} is not valid. `;
-            }
+        setLoadStatus(resultObject);
+      } else {
+        if(req.headers()['element-id'] == "firstLegStatus"){
+          legCompleted = 1;
+          if(resultObject.result != "success"){
+            msg = `${config.meetingSIP} could not be joined: ${resultObject.message}`;
           }
-        }
-        if(loadSuccess == null){
-          loadSuccess = true;
+        } else if (req.headers()['element-id'] == "secondLegStatus"){
+          legCompleted = 2;
+          if(resultObject.result != "success"){
+            msg = `${config.endpointSIP} could not be joined because ${resultObject.message}`;
+          }
+        } else if (req.headers()['element-id'] == "thirdLegStatus"){
+          legCompleted = 3;
+          if(resultObject.result != "success"){
+            msg = `${config.meetingSIP} could not be joined: ${resultObject.message}`;
+          } else {
+            complete = true;
+          }
+        } else if (req.headers()['element-id'] == "cleanup"){
+          cleanup = true;
         }
       }
     }
@@ -94,101 +139,34 @@ async function retry(fn, counter, ...args) {
       if(loadSuccess != null){
         clearInterval(loadInterval);
         if(loadSuccess == true){
-          var config = {
-                        "meetingSIP":meeting,
-                        "endpointSIP":endpointSIP,
-                        "launcher":"webkit",
-                       };
           result = page.evaluate((config) => operator(config), config)
+          let statusInterval = setInterval(function(){
+            statusCounter += 1;
+            console.log(statusCounter);
+            if(msg != "" || statusCounter >= 30 || complete){
+              clearInterval(statusInterval);
+              if(msg == "" && !complete){
+                if(legCompleted == 0){
+                  msg = "Timeout waiting for initialToken user to be let into meetingSIP. ";
+                } else if (legCompleted == 1){
+                  msg = "Timeout waiting for endpointToken to dial endpointSIP";
+                } else if(legCompleted == 2){
+                  msg = "Timeout waiting for endpointToken user to be let into meetingSIP. ";
+                  if(meetingToken != null){
+                    msg = "Timeout waiting for meetingToken user to be let into meetingSIP. ";
+                  }
+                }
+              }
+              waitForEnd();
+            }
+          }, 2000);
         } else {
-          console.log("TODO: FAILURE");
+          waitForEnd();
         }
       }
     }, 2000);
-    //let loadedStatus = await page.waitForSelector('#loadedStatus');
-    //await page.waitForFunction(() => loadedReady == true);
-    //let resultObject = JSON.parse(await page.innerHTML("#loadedStatus"));
-    //console.log(resultObject);
-    //await sleep(12000);
-    //resultObject={"first":{"success":true}, "second":{"success":true}}
     console.log("Moving on.");
-
-    let tokenPositions = {"first":"initialToken", "second":"endpointToken", "third":"meetingToken"};
-    
-    if(loadSuccess){
-      var config = {
-                    "meetingSIP":meeting,
-                    "endpointSIP":endpointSIP,
-                    "launcher":"webkit",
-                   };
-      result = await page.evaluate((config) => operator(config), config)
-      console.log(result);
-      resultObject = null;
-      try{
-        //await page.waitForFunction(() => firstLegReady == true, {timeout:60000});
-        resultObject = JSON.parse(await page.innerHTML("#firstLegStatus"), {timeout:60000});
-        //let firstLegStatus = await page.waitForSelector('#firstLegStatus', {timeout: 60000});
-        //resultObject = JSON.parse(await firstLegStatus.innerHTML());
-        console.log('firstLegStatus');
-        console.log(resultObject);
-      }catch(e){
-        msg = "Timeout waiting for initialToken user to be let into meetingSIP. ";
-        console.log(msg);
-      }
-      if(resultObject != null){
-        if(resultObject["result"] == "success"){
-          //await page.waitForFunction(() => secondLegReady == true, {timeout:60000});
-          resultObject = JSON.parse(await page.innerHTML("#secondLegStatus"));
-          //let secondLegStatus = await page.waitForSelector('#secondLegStatus');
-          //resultObject = JSON.parse(await secondLegStatus.innerHTML());
-          console.log('secondLegStatus');
-          console.log(resultObject);
-          if(resultObject["result"] == "success"){
-            resultObject = null;
-            try{
-              //await page.waitForFunction(() => thirdLegReady == true, {timeout:60000});
-              resultObject = JSON.parse(await page.innerHTML("#thirdLegStatus"), {timeout:60000});
-              //let thirdLegStatus = await page.waitForSelector('#thirdLegStatus', {timeout: 60000});
-              //resultObject = JSON.parse(await thirdLegStatus.innerHTML());
-              console.log('thirdLegStatus');
-              console.log(resultObject);
-            }catch(e){
-              msg = "Timeout waiting for endpointToken user to be let into meetingSIP. ";
-              if(process.env.MEETING_TOKEN != null){
-                msg = "Timeout waiting for meetingToken user to be let into meetingSIP. ";
-              }
-              console.log(msg);
-            }
-            if(resultObject != null && resultObject["result"] != "success"){
-              msg = `${config.meetingSIP} could not be joined: ${resultObject.message}`;
-            }
-          } else {
-            msg = `${config.endpointSIP} could not be joined because ${resultObject.message}`;
-          }
-        } else {
-          msg = `${config.meetingSIP} could not be joined: ${resultObject.message}`;
-        }
-      }
-    } //else loadSuccess is false, msg already set
   } else {
     msg = "meetingToken cannot be the same as initialToken";
   }
-  console.log("Final MSG:");
-  console.log(msg);
-  process.send(msg); //send this to parent process
-  if(msg != ""){
-    console.log('calling cleanup!');
-    result = await page.evaluate(() => cleanup());
-    console.log(result);
-  }
-  console.log('waiting for cleanup.');
-  //await page.waitForFunction(() => cleanupReady == true, {timeout:0});
-  resultObject = JSON.parse(await page.innerHTML("#cleanup", {timeout:0}));
-  //let cleanupStatus = await page.waitForSelector('#cleanup', {timeout: 0});
-  //resultObject = JSON.parse(await cleanupStatus.innerHTML());
-  console.log(resultObject);
-  console.log('cleanup complete.');
-  console.log('closing browser.');
-  await browser.close();
-  process.exit();
 })();
