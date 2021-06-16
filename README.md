@@ -26,7 +26,7 @@ Your app is listening on port 12345
 ## REST API
 Once your server is running, you can test it with HTTPS POST requests with a JSON payload to the /bridge path. Example:
 ```
-POST https://localhost:12345/bridge
+POST http://localhost:12345/bridge
 ```
 
 JSON Data Parameters
