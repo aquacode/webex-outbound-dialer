@@ -9,6 +9,7 @@ Node.js version 12 or above
 ```
 export PORT=12345 #(the port your server listener will expose)
 ```
+If you set ```PORT=12345``` in a file named ```.env``` in the root directory, this variable will be loaded in server.js at runtime.
 
 ## NPM Packages
 ```
