@@ -57,6 +57,7 @@ second_webex.once("ready", () => {
   genericFinalizeWebexAuth("second", second_webex);
 });
 
+//third_webex is optional, only used if meetingToken is supplied in initial REST request
 if(third_webex != null){
   third_webex.once("ready", () => {
     genericFinalizeWebexAuth("third", third_webex);
@@ -119,6 +120,11 @@ function cleanup(){
   }
 }
 
+/*Originally we used writeElement to write to the DOM to update playwright
+  but those functions don't work in our headful/no display environment,
+  so we utilize inbound requests to the server, which playwright can still snoop.
+  That's why we now fetch('/listener')
+  */
 function writeElement(id, innerHTML){
   let retEle = document.createElement("DIV");
   retEle.id = id;
@@ -156,6 +162,7 @@ function loadElement(){
   }
 }
 
+//Used for first and third legs of the call
 function mainLegElement(result, place, message){
   let innerHTML = {"result":result}
   if(message != undefined){
@@ -270,7 +277,7 @@ function mainLeg(destination, place){
           addMainLegMedia(meeting, place);
         } else {
           var intervalID = setInterval(function(){
-            console.log(connectCounter);
+            console.log(`${place}Leg connectCounter: ${connectCounter}`);
             console.log(meeting.state);
             if(meeting.state == "JOINED"){
               console.log('clearing interval');
@@ -336,31 +343,6 @@ function secondLeg(destination){
 }
 
 
-function secondLegWithMedia(destination){
-  console.log(`secondLeg destination - ${destination}`);
-  return second_webex.meetings
-    .create(destination)
-    .then(meeting => {
-      meetings.second = meeting;
-      bindSecondMeetingEvents(meetings.second);
-      return meetings.second.join().then(() => {
-        return meetings.second.getMediaStreams(mediaSettings).then((mediaStreams) => {
-          const [localStream, localShare] = mediaStreams;
-          console.log("localStream:");
-          console.log(localStream);
-          meetings.second.addMedia({
-            localShare,
-            localStream,
-            mediaSettings
-          });
-        });
-      });
-    })
-    .catch(error => { console.error(error); });
-}
-
-
-
 function updateFirstLeg(){
   console.log("meetings.first");
   console.log(meetings.first);
@@ -372,42 +354,6 @@ function updateFirstLeg(){
     localStream: streams.second,
     mediaSettings
   });
-}
-
-function updateFirstLegAudio(){
-  console.log("streams.second");
-  console.log(streams.second);
-  audioStream = new MediaStream();
-  audioStream.addTrack(streams.second.getAudioTracks()[0])
-  console.log("audioStream");
-  console.log(audioStream);
-  meetings.first.updateAudio({
-    sendAudio: true,
-    receiveAudio: true,
-    stream: audioStream,
-  });
-  setTimeout(() => {
-    console.log('second update');
-    meetings.first.updateAudio({sendAudio:true, receiveAudio: true, stream:audioStream});
-  }, 2000);
-}
-
-function updateFirstLegVideo(){
-  console.log("streams.second");
-  console.log(streams.second);
-  videoStream = new MediaStream();
-  videoStream.addTrack(streams.second.getVideoTracks()[0])
-  console.log("videoStream");
-  console.log(videoStream);
-  meetings.first.updateVideo({
-    sendVideo: true,
-    receiveVideo: true,
-    stream: videoStream,
-  });
-  setTimeout(() => {
-    console.log('second update');
-    meetings.first.updateVideo({sendVideo:true, receiveVideo: true, stream:videoStream});
-  }, 2000);
 }
 
 function updateSecondLegAV(){

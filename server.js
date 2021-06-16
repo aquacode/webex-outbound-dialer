@@ -7,12 +7,14 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 
+//handles Ctrl+C interrupts
 var process = require('process')
 process.on('SIGINT', () => {
   console.info("Interrupted")
   process.exit(0)
 })
 
+//send response to the REST /bridge POST request
 function send(res, jObject){
   try{
     jObject["message"] = jObject["message"].trim();
@@ -24,13 +26,13 @@ function send(res, jObject){
   } catch (e){
     console.log('request already responded, not sending again.')
   }
-
 }
 
+//we use a child process to make the bridge call
+//these are our event listeners for that child process.
 function setupChildListeners(child, res){
   child.on('message', function (msg) {
     console.log(`child msg: ${msg}`);
-    //child.disconnect()
     success = true;
     if(msg != ""){
       success = false;
@@ -50,12 +52,7 @@ function setupChildListeners(child, res){
 
   child.on('error', function (err) {
     console.log(`child err:\n${err}`);
-    //child.disconnect()
    })
-
-  child.stdin.on('data', function(data) {
-    console.log(`child stdin: ${data}`);
-  });
 
   child.stdout.on('data', function(data) {
     process.stdout.write(`child stdout: ${data}`);
@@ -68,11 +65,10 @@ function setupChildListeners(child, res){
 
 // ..
 app.use(express.static("public"));
-// parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
-// parse application/json
 app.use(bodyParser.json());
 
+//There's a better way to serve these 3 files
 app.get('/launch.html', async(req, res, next) => {
   console.log('launch')
   res.sendFile(`${__dirname}/launch.html`)
@@ -86,6 +82,7 @@ app.get('/public/webex.js', async(req, res, next) => {
   res.sendFile(`${__dirname}/public/webex.js`)
 });
 
+//used only to expose browser request actions to playwright
 app.post('/listener', async(req, res, next) => {
   console.log('listener');
   console.log(req.body);
@@ -107,16 +104,14 @@ app.post('/bridge', async (req, res, next) => {
     msg = "endpointSIP is required and must be a valid SIP address.";
   } else {
 
-    let processArgs = [req.body.initialToken, req.body.endpointToken, req.body.meeting, req.body.endpointSIP]
+    let processArgs = [process.env.PORT, req.body.initialToken, req.body.endpointToken, req.body.meeting, req.body.endpointSIP]
     if(req.body.meetingToken != null){
       processArgs.push(req.body.meetingToken);
     }
     console.log(processArgs);
     success = true;
 
-    /*var child = fork('./firefox.js', processArgs, {
-      stdio: 'pipe'
-    });*/
+    //spawn a browser process to make the desired bridge webex call/meeting
     var child = fork('./webkit.js', processArgs, {
       stdio: 'pipe'
     });
@@ -130,6 +125,7 @@ app.post('/bridge', async (req, res, next) => {
     send(res, {"success":success, "message":msg});
   }
 })
+
 
 const listener = app.listen(process.env.PORT, function() {
   console.log("Your app is listening on port " + listener.address().port);
