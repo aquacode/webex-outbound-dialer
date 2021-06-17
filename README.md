@@ -49,3 +49,28 @@ Sample:
 Postman Sample:
 <img width="904" alt="Screen Shot 2021-06-16 at 12 41 32 PM" src="https://user-images.githubusercontent.com/19175490/122259497-3f7a4900-cea0-11eb-9024-a0a542cf185d.png">
 
+
+## Behind The Scenes
+![Bridge](https://user-images.githubusercontent.com/19175490/122417774-bcb4c500-cf57-11eb-9d9f-4df24cbdbecc.jpg)
+**Figure A:**  
+I.   **1** is the ```initialToken``` user who dials into the group meeting without any local media. This can be a guest user, bot, or licensed user.  
+II.  **1** receives the remote stream from the group meeting, and passes it as the local stream for **2**.  
+III. **2** is the ```endpointToken``` user who dials the SIP endpoint (interpreter service).
+* ```endpointToken``` cannot be a guest token AND cannot be the same as initialToken.  
+
+IV.  **2** receives the remote stream from the SIP endpoint and passes it as the local stream for **3**.  
+* if provided, **3** will use the optional ```meetingToken```, but otherwise uses the ```endpointToken```.  
+
+V.   **3** dials into the group meeting and receives another remote stream.  
+
+**Figure B:**  
+I.   It was necessary for **3** to dial into the meeting, because **1**'s local media cannot be updated because it had no local media initially.  
+
+* This is a limitation of the SDK.  
+* This now creates a loop where the SIP device user can see and hear themself in the meeting.  
+II.  **2**'s local media can be updated, because it had initial media (provided by **1**).  
+
+III. Therefore, **3** uses its remote stream to update the local stream of **2**.  
+
+**Figure C:**  
+I. **1** is no longer needed, so it can be dropped, solving the loop problem, and creating the bridge.  
