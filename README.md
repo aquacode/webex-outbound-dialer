@@ -74,3 +74,36 @@ III. Therefore, **3** uses its remote stream to update the local stream of **2**
 
 **Figure C:**  
 I. **1** is no longer needed, so it can be dropped, solving the loop problem, and creating the bridge.  
+
+
+## Serve  
+If you want to serve this at system startup, I recommend using [pm2](https://pm2.keymetrics.io/docs/usage/quick-start/).  
+1. ```npm install -g pm2```  
+*Note: You may run into an issue where pm2 throws an error when it tries to access a directory that does not exist.  You can simply make the directory in that case.  For example*  
+```
+mkdir -p /Users/<username>/Library/LaunchAgents/
+```
+
+2. ```pm2 startup```  
+*Note: Follow the instructions from pm2 - run the command it provides to you.*  
+
+
+3. Start the server with pm2
+```
+pm2 start path/to/bridgeCall/server.js --watch
+```
+
+4. ```pm2 save```  
+
+5. Unfortunately, this will only start the server once ```<username>``` logs into the mac.  We want it to start at boot, so what I had to do was move the .plist file that was created in ```~/Library/LaunchAgents``` and move it to the system room directory ```/Library/LaunchDaemons```  
+*Note: this is not the Library directory that exists under the users directory i.e.*
+```
+cd /Users/<username>/Library/LaunchAgents/
+mv pm2.<username>.plist /Library/LaunchDaemons
+```
+  
+6. I then also had to manually change the UserName in the .plist file to root:
+```
+  <key>UserName</key>
+  <string>root</string>
+```
