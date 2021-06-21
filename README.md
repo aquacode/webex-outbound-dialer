@@ -95,7 +95,7 @@ pm2 start path/to/bridgeCall/server.js --watch
 
 4. ```pm2 save```  
 
-5. Unfortunately, this will only start the server once ```<username>``` logs into the mac.  We want it to start at boot, so what I had to do was move the .plist file that was created in ```~/Library/LaunchAgents``` and move it to the system room directory ```/Library/LaunchDaemons```  
+5. Unfortunately, this will only start the server once ```<username>``` logs into the mac.  We want it to start at boot, so what I had to do was move the .plist file that was created in ```~/Library/LaunchAgents``` and move it to the system root directory ```/Library/LaunchDaemons```  
 *Note: this is not the Library directory that exists under the users directory i.e.*
 ```
 cd /Users/<username>/Library/LaunchAgents/
