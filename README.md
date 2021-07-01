@@ -1,13 +1,13 @@
 # bridgeCall
-Add an unregistered SIP device to a Webex call
-
-## Video Walkthrough 
-A video walkthrough of this application in production is available here:  
-https://youtu.be/Kj53KW4ECNk
+Add an unregistered SIP device to a Webex call  
 
 Requirements:  
 MacOS 10.15 (Catalina)  
 Node.js version 12 or above
+
+## Video Walkthrough 
+A video walkthrough of this application in production is available here:  
+https://youtu.be/Kj53KW4ECNk  
 
 ## Environment Variables (Required)
 ```
