@@ -14,6 +14,13 @@ process.on('SIGINT', () => {
   process.exit(0)
 })
 
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 //send response to the REST /bridge POST request
 function send(res, jObject){
   try{
@@ -30,36 +37,50 @@ function send(res, jObject){
 
 //we use a child process to make the bridge call
 //these are our event listeners for that child process.
-function setupChildListeners(child, res){
+function setupChildListeners(child, res, trackingId){
+
+  function getTimeString(){
+    let timestamp = new Date();
+    return timestamp.toISOString().slice(0,-5);
+  }
+
+  function myLogLine(msg){
+    console.log(`${getTimeString()}-${trackingId}-${msg}`);
+  }
+
+  function myStdOut(msg){
+    process.stdout.write(`${getTimeString()}-${trackingId}-${msg}`);
+  }
+
   child.on('message', function (msg) {
-    console.log(`child msg: ${msg}`);
+    myLogLine(`child msg: ${msg}`);
     success = true;
     if(msg != ""){
       success = false;
     }
-    send(res, {"success":success, "message":msg})
+    send(res, {"success":success, "message":msg, "trackingId":trackingId})
    })
 
   child.on('exit', function (code, signal) {
-    console.log('child process exited with ' +
+    myLogLine(`child process exited with ` +
                 `code ${code} and signal ${signal}`);
   });
 
   child.on('close', function (code, signal) {
-    console.log('child process closed with ' +
+    myLogLine(`child process closed with ` +
                 `code ${code} and signal ${signal}`);
   });
 
   child.on('error', function (err) {
-    console.log(`child err:\n${err}`);
+    myLogLine(`child err:\n${err}`);
    })
 
   child.stdout.on('data', function(data) {
-    process.stdout.write(`child stdout: ${data}`);
+    myStdOut(`child stdout: ${data}`);
   });
 
   child.stderr.on('data', (data) => {
-    console.error(`child stderr: ${data}`);
+    myLogLine(`child stderr: ${data}`);
   });
 }
 
@@ -82,16 +103,22 @@ app.get('/public/webex.js', async(req, res, next) => {
   res.sendFile(`${__dirname}/public/webex.js`)
 });
 
+app.get('/listener', async(req, res, next) => {
+  res.send('alive');
+});
+
 //used only to expose browser request actions to playwright
 app.post('/listener', async(req, res, next) => {
   console.log('listener');
   console.log(req.body);
+  res.send('alive');
 });
 
 app.post('/bridge', async (req, res, next) => {
   console.log('bridge');
   console.log(req.body);
-
+  let trackingId = uuidv4();
+  console.log(trackingId);
   let msg = "";
   let success = false;
   if(req.body.initialToken == undefined){
@@ -116,13 +143,13 @@ app.post('/bridge', async (req, res, next) => {
       stdio: 'pipe'
     });
 
-    setupChildListeners(child, res);
+    setupChildListeners(child, res, trackingId);
     if([undefined, null, false].indexOf(req.body.wait) >= 0){
-      send(res, {"success":success, "message":"Request to bridge call has been received."})
+      send(res, {"success":success, "message":"Request to bridge call has been received.", "trackingId":trackingId})
     }
   }
   if(!success){
-    send(res, {"success":success, "message":msg});
+    send(res, {"success":success, "message":msg, "trackingId":trackingId});
   }
 })
 
