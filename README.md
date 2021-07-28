@@ -1,14 +1,14 @@
 <p align="center">
-  <h2 align="center"> bridgeCall</h2>
+  <h2 align="center"> Webex Outbound Dialer</h2>
 
   <p align="center">
     As of Q4 2021, it isn't possible to <i>natively</i> add a non-Webex registered SIP endpoint to a Webex Meeting ad-hoc.  This proof of concept solves that issue!
     <br />
     <a href="https://youtu.be/Kj53KW4ECNk"><strong>Video Demo</strong></a>
     ·
-    <a href="https://github.com/WXSD-Sales/bridgeCall/issues"><strong>Report Bug</strong></a>
+    <a href="https://github.com/WXSD-Sales/WebexOutboundDialer/issues"><strong>Report Bug</strong></a>
     ·
-    <a href="https://github.com/WXSD-Sales/bridgeCall/issues"><strong>Request Feature</strong></a>
+    <a href="https://github.com/WXSD-Sales/WebexOutboundDialer/issues"><strong>Request Feature</strong></a>
   </p>
 </p>
 
@@ -16,7 +16,7 @@
 
 ### Video Demo
 
-[![Bridge Call Video Demo](https://img.youtube.com/vi/Kj53KW4ECNk/0.jpg)](https://www.youtube.com/watch?v=Kj53KW4ECNk)
+[![Webex Outbound Dialer Video Demo](https://img.youtube.com/vi/Kj53KW4ECNk/0.jpg)](https://www.youtube.com/watch?v=Kj53KW4ECNk)
 
 
 ### Flow Diagram
