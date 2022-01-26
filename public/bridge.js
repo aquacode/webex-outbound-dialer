@@ -185,7 +185,11 @@ function mainLegElement(result, place, message){
 function operator(config){
   firstLegDestination = config.meetingSIP;
   secondLegDestination = config.endpointSIP;
-  launchedFrom = config.launcher;
+  if(config.launcher !== null && config.launcher !== undefined){
+    launchedFrom = config.launcher;
+  } else {
+    launchedFrom = "webkit";
+  }
   mainLeg(firstLegDestination, "first");
 }
 
