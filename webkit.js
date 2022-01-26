@@ -13,6 +13,7 @@ function sleep(ms) {
   });
 
   const page = await browser.newPage();
+  await page.setDefaultNavigationTimeout(60000);
 
   let meetingToken = null;
   let msg = ""; //response message to our parent process
