@@ -428,7 +428,7 @@ function addTrack(main_stream, media){
       console.log('auto starting second leg to: '+ secondLegDestination);
       secondLeg(secondLegDestination);
     } else if (main_stream == "second"){
-        if(launchedFrom == "webkit"){
+        if(launchedFrom == "chrome" || launchedFrom == "webkit"){
           mainLeg(firstLegDestination, "third");
         } else {
           updateFirstLeg();

@@ -1,4 +1,4 @@
-const { webkit } = require('playwright');
+const { chromium, webkit } = require('playwright');
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -8,12 +8,23 @@ function sleep(ms) {
   //headless: true hangs when trying to initialize the browser in the AWS MacOS environment.
   //My assumption is this has to do with GPU/Monitor (or lack of?)
   //It isn't clear why headless:false does work, but it causes other problems.
-  const browser = await webkit.launch({ headless: true , args: [
-  ],
+let browser = null;
+if (process.env.BRIDGE_TYPE == "chrome") {
+  browser = await chromium.launch({
+    headless: false,
+    args: [],
+    channel: 'chrome',
+    timeout: 0
   });
+} else {
+  browser = await webkit.launch({ headless: true , args: [
+  ],});
+}
+
 
   const page = await browser.newPage();
   await page.setDefaultNavigationTimeout(60000);
+
 
   let meetingToken = null;
   let msg = ""; //response message to our parent process
@@ -36,7 +47,7 @@ function sleep(ms) {
   let config = {
                 "meetingSIP":meeting,
                 "endpointSIP":endpointSIP,
-                "launcher":"webkit",
+      "launcher": process.env.TYPE == "chrome" ? "chrome" : "webkit",
                };
 
   page.on("console", (msg) => {
@@ -135,7 +146,7 @@ function sleep(ms) {
     }
     //let gotoURL = `http://localhost:${process.env.HIDDEN_PORT}?${argumentString}`;
     //let gotoURL = `file://${__dirname}/launch.html?${argumentString}`;
-    let gotoURL = `http://localhost:${serverPort}/launch.html?${argumentString}`;
+    let gotoURL = `http://${process.env.BRIDGE_IP}:${serverPort}/launch.html?${argumentString}`;
     console.log(gotoURL);
     await page.goto(gotoURL);
     console.log('page loaded')

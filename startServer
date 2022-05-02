@@ -1,0 +1,12 @@
+#!/bin/bash
+
+type=${1:-"webkit"}
+ip=${2:-"localhost"}
+port=${3:-"12345"}
+seleniumGridUrl=$4
+
+if [ -n $seleniumGridUrl ]; then
+    BRIDGE_TYPE=$type BRIDGE_IP=$ip PORT=$port SELENIUM_REMOTE_URL=$seleniumGridUrl node server.js
+else
+    BRIDGE_TYPE=$type BRIDGE_IP=$ip PORT=$port node server.js
+fi
